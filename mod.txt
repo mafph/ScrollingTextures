@@ -2,7 +2,7 @@
 	"name": "Scrolling Textures",
 	"description": "Animated, glowing weapon textures with in-game settings. Textures and material configs are registered at runtime, no BeardLib and no restart needed for new skins.",
 	"author": "I AM GREEN",
-	"version": "1.0",
+	"version": "1.1",
 	"blt_version": 2,
 	"updates" : [
 		{
