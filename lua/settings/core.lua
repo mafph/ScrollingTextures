@@ -33,8 +33,8 @@ T.defaults = {
 	react_shot_flash_decay = 50,
 
 	light = true,
-	light_intensity = 0.4,
-	light_range = 350,
+	light_intensity = 0.3,
+	light_range = 300,
 
 }
 
@@ -470,7 +470,7 @@ local function update_lights()
 		end
 	end
 	local base_glow = T.defaults.glow > 0 and T.defaults.glow or 5
-	local intensity = s.light_intensity * (T:glow_mult() / base_glow)
+	local intensity = s.light_intensity * math.log(1 + T:glow_mult() / base_glow) / math.log(2)
 	for _, base in ipairs(want) do
 		local unit = base._unit
 		local light = ensure_light(unit)
@@ -478,8 +478,8 @@ local function update_lights()
 			local c = T:skin_for(base).color or WHITE
 			local obj = fire_object(base)
 			if obj then
-				light:link(obj)
-				light:set_local_position(Vector3(0, 0, 0))
+			light:link(obj)
+			light:set_local_position(Vector3(0, -30, 0))
 			else
 				light:set_position(unit:position())
 			end
