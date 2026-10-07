@@ -1,0 +1,3 @@
+*.material_config
+/data/generated.json
+/data/map.json
