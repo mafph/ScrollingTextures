@@ -167,6 +167,7 @@ Hooks:Add("MenuManagerBuildCustomMenus", "ScrollingTextures_build", function(men
 	nodes[MENU] = MenuHelper:BuildMenu(MENU, { back_callback = "st_save" })
 	nodes[MENU_SKIN] = MenuHelper:BuildMenu(MENU_SKIN, { back_callback = "st_save" })
 	nodes[MENU_VISUALS] = MenuHelper:BuildMenu(MENU_VISUALS, { back_callback = "st_save" })
+	nodes[MENU_SKIN]:parameters().hide_bg = true
 
 	MenuHelper:AddMenuItem(nodes.blt_options, MENU, "st_menu_title", "st_menu_desc")
 	MenuHelper:AddMenuItem(nodes[MENU], MENU_SKIN, "st_skin_menu_title", "st_skin_menu_desc")
