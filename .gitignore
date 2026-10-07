@@ -1,5 +1,5 @@
 *.material_config
-
+*.texture
 /data/generated.json
 /data/map.json
 /docs
