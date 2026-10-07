@@ -30,6 +30,7 @@ L.problems = {}
 L.queue = {}
 L._qi = 0
 L.cfg_registered = {}
+L.reg = {}
 L.skin_list = {}
 
 local function problem(msg)
@@ -48,8 +49,44 @@ end
 
 local function register(ids_type, db_path, file_path)
 	local ids = Idstring(db_path)
-	DB:create_entry(ids_type, ids, file_path)
-	L.queue[#L.queue + 1] = { ids_type, ids }
+	if not L.reg[db_path] then
+		L.reg[db_path] = true
+		DB:create_entry(ids_type, ids, file_path)
+		L.queue[#L.queue + 1] = { ids_type, ids, db_path }
+	end
+end
+
+local function signature(path)
+	local f = io.open(path, "rb")
+	if not f then return "missing" end
+	local size = f:seek("end")
+	local parts = { tostring(size) }
+	if size > 0 then
+		f:seek("set", 0)
+		parts[#parts + 1] = f:read(math.min(128, size)) or ""
+		if size > 128 then
+			f:seek("set", math.floor((size - 128) / 2))
+			parts[#parts + 1] = f:read(128) or ""
+		end
+		f:seek("set", math.max(0, size - 128))
+		parts[#parts + 1] = f:read(128) or ""
+	end
+	f:close()
+	return table.concat(parts, "|")
+end
+
+local function suffix(sig)
+	local h = 5381
+	for i = 1, #sig do
+		h = (h * 33 + sig:byte(i)) % 4294967296
+	end
+	return ("%08x"):format(h)
+end
+
+local function register_texture(db_kind, file_path)
+	local db = L.TEX_DB .. db_kind .. "_" .. suffix(signature(file_path))
+	register(IDS_TEXTURE, db, file_path)
+	return db
 end
 
 -- Returns nil if the file is a usable DDS, otherwise a short reason.
@@ -85,35 +122,39 @@ local function skin_meta()
 	return meta
 end
 
-local function make_skin(id, meta)
+local function make_skin(id, meta, base, glow)
 	local m = meta[id] or {}
 	return {
 		id = id,
 		name = m.name or id,
-		base = L.TEX_DB .. id .. "_df",
-		glow = L.TEX_DB .. id .. "_il",
+		base = base,
+		glow = glow,
 		color = m.color,
 	}
 end
 
--- 1) Everything already shipped in assets/.../textures (bundled and earlier imports).
-local function register_shipped()
-	local have = {}
-	for _, f in ipairs(files_in(TEX_DIR)) do
+-- 1) Everything already shipped in assets/.../textures (bundled and earlier imports). The
+-- default textures keep their fixed names (the generated material configs reference them);
+-- skin pairs get a content-hash suffix so a changed file is registered as a new resource.
+local function register_shipped(out)
+	local files = files_in(TEX_DIR)
+	local stems = {}
+	for _, f in ipairs(files) do
 		local stem = f:match("^(.+)%.texture$")
-		if stem then
-			have[stem] = true
-			register(IDS_TEXTURE, L.TEX_DB .. stem, TEX_DIR .. f)
+		if stem then stems[stem] = TEX_DIR .. f end
+	end
+	for _, stem in ipairs({ "default_df", "default_il", "black" }) do
+		if stems[stem] then register(IDS_TEXTURE, L.TEX_DB .. stem, stems[stem]) end
+	end
+	for id in pairs(stems) do
+		local key = id:match("^(.+)_df$")
+		local il = key and stems[key .. "_il"]
+		if key and il and not RESERVED[key:lower()] then
+			local base = register_texture(id, stems[id])
+			local glow = register_texture(key .. "_il", il)
+			out[key] = { base = base, glow = glow }
 		end
 	end
-	local out = {}
-	for stem in pairs(have) do
-		local id = stem:match("^(.+)_df$")
-		if id and have[id .. "_il"] and not RESERVED[id:lower()] then
-			out[id] = true
-		end
-	end
-	return out
 end
 
 -- 2) Pairs dropped into input/. They stay where they are and are registered straight from there.
@@ -162,9 +203,9 @@ local function register_input(ids_out)
 		if why then
 			problem(entry.name .. ": " .. why)
 		else
-			register(IDS_TEXTURE, L.TEX_DB .. id .. "_df", entry.df)
-			register(IDS_TEXTURE, L.TEX_DB .. id .. "_il", entry.il)
-			ids_out[id] = true
+			local base = register_texture(id .. "_df", entry.df)
+			local glow = register_texture(id .. "_il", entry.il)
+			ids_out[id] = { base = base, glow = glow }
 		end
 	end
 end
@@ -221,18 +262,24 @@ function L.start_loading()
 	step()
 end
 
-do
-	local ids = register_shipped()
-	register_input(ids)
+function L.rescan()
+	local textures = {}
+	register_shipped(textures)
+	register_input(textures)
 
 	local meta = skin_meta()
 	local list = {}
-	for id in pairs(ids) do list[#list + 1] = make_skin(id, meta) end
+	for id, t in pairs(textures) do
+		list[#list + 1] = make_skin(id, meta, t.base, t.glow)
+	end
 	table.sort(list, function(a, b) return a.id < b.id end)
 	L.skin_list = list
+	log("[Scrolling Textures] rescan " .. #L.skin_list .. " skins")
 
 	L.register_configs(list_config_names())
 end
+
+L.rescan()
 
 Hooks:Add("MenuManagerOnOpenMenu", "ScrollingTexturesLoader_start", function(menu_manager, menu_name)
 	if menu_name == "menu_main" then L.start_loading() end

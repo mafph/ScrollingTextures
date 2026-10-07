@@ -211,14 +211,31 @@ local UV_SPEED = Idstring("uv_speed")
 local SLOT_DIFFUSE = Idstring("diffuse_texture")
 local SLOT_GLOW = Idstring("self_illumination_texture")
 
-local ready = {}
+local tries = {}
+local scheduled = {}
 local function texture_ready(ids)
 	if not ids then return false end
-	local key = ids:key()
-	if not ready[key] then
-		ready[key] = managers.dyn_resource:is_resource_ready(IDS_TEXTURE, ids, DynamicResourceManager.DYN_RESOURCES_PACKAGE) or nil
+	local package = DynamicResourceManager.DYN_RESOURCES_PACKAGE
+	if managers.dyn_resource:is_resource_ready(IDS_TEXTURE, ids, package) then
+		return true
 	end
-	return ready[key] and true or false
+	managers.dyn_resource:load(IDS_TEXTURE, ids, package)
+	local key = tostring(ids:key())
+	if not scheduled[key] then
+		local n = (tries[key] or 0) + 1
+		if n > 50 then
+			tries[key] = nil
+			log("[Scrolling Textures] texture still not ready: " .. key)
+		else
+			tries[key] = n
+			scheduled[key] = true
+			DelayedCalls:Add("ScrollingTextures_retry_" .. key, 0.4, function()
+				scheduled[key] = nil
+				T:apply_all()
+			end)
+		end
+	end
+	return false
 end
 
 function T:collect(weapon)
@@ -306,9 +323,7 @@ end
 function T:apply(weapon)
 	local s = self.settings
 	local groups = self:collect(weapon)
-	if #groups == 0 then
-		return
-	end
+	if #groups == 0 then return end
 
 	local skin = self:skin_for(weapon)
 	local base = skin and texture_ready(skin.ids_base) and skin.ids_base

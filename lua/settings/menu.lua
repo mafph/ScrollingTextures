@@ -1,9 +1,11 @@
 dofile(ModPath .. "lua/settings/core.lua")
+core:import("CoreMenuItemOption")
 local T = _G.ScrollingTexturesSettings
 
 local MENU = "st_settings"
 local MENU_SKIN = "st_settings_skin"
 local MENU_VISUALS = "st_settings_visuals"
+local refresh_skin_choices
 
 Hooks:Add("LocalizationManagerPostInit", "ScrollingTextures_loc", function(loc)
 	loc:load_localization_file(T._path .. "loc/english.txt")
@@ -93,6 +95,16 @@ Hooks:Add("MenuManagerInitialize", "ScrollingTextures_callbacks", function(menu_
 		do_reset(MENU_SKIN, SKIN_KEYS)
 		QuickMenu:new(managers.localization:text("st_reset_skin_title"), managers.localization:text("st_reset_done"), {}, true)
 	end
+	MenuCallbackHandler.st_rescan_skins = function()
+		_G.ScrollingTexturesLoader.rescan()
+		T:load_manifest()
+		refresh_skin_choices(MENU_SKIN)
+		DelayedCalls:Add("ScrollingTextures_rescan_apply", 0.5, function()
+			local ST = _G.ScrollingTextures
+			if ST and ST.update then ST.update() end
+		end)
+		QuickMenu:new(managers.localization:text("st_rescan_skins_title"), managers.localization:text("st_rescan_skins_done"), {}, true)
+	end
 	MenuCallbackHandler.st_reset_visuals = function()
 		do_reset(MENU_VISUALS, VISUAL_KEYS)
 		QuickMenu:new(managers.localization:text("st_reset_visuals_title"), managers.localization:text("st_reset_done"), {}, true)
@@ -128,6 +140,7 @@ Hooks:Add("MenuManagerPopulateCustomMenus", "ScrollingTextures_populate", functi
 
 	add_to(MENU_SKIN, "choice", "primary_skin", { value = s.primary_skin, items = T:skin_names(), localized_items = false, priority = 100 })
 	add_to(MENU_SKIN, "choice", "secondary_skin", { value = s.secondary_skin, items = T:skin_names(), localized_items = false, priority = 99 })
+	MenuHelper:AddButton({ id = "st_rescan_skins", title = "st_rescan_skins_title", desc = "st_rescan_skins_desc", callback = "st_rescan_skins", menu_id = MENU_SKIN, priority = 98 })
 	add_to(MENU_SKIN, "toggle", "enabled", { value = s.enabled, priority = 98 })
 	add_to(MENU_SKIN, "toggle", "scroll", { value = s.scroll, priority = 97 })
 	add_to(MENU_SKIN, "toggle", "menus", { value = s.menus, priority = 96 })
@@ -159,3 +172,22 @@ Hooks:Add("MenuManagerBuildCustomMenus", "ScrollingTextures_build", function(men
 	MenuHelper:AddMenuItem(nodes[MENU], MENU_SKIN, "st_skin_menu_title", "st_skin_menu_desc")
 	MenuHelper:AddMenuItem(nodes[MENU], MENU_VISUALS, "st_reactive_menu_title", "st_reactive_menu_desc")
 end)
+
+refresh_skin_choices = function(menu_id)
+	local menu = MenuHelper:GetMenu(menu_id)
+	if not (menu and menu._items) then return end
+	local names = T:skin_names()
+	for _, item in pairs(menu._items) do
+		local p = item._parameters
+		if p and (p.name == "st_primary_skin" or p.name == "st_secondary_skin") and item.clear_options then
+			local current = item:value()
+			item:clear_options()
+			for i, name in ipairs(names) do
+				item:add_option(CoreMenuItemOption.ItemOption:new(nil, { text_id = name, value = i, localize = false }))
+			end
+			item:_show_options(item._callback_handler)
+			item:set_value(current)
+		end
+	end
+end
+

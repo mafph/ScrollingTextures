@@ -45,5 +45,8 @@
 	"st_light_range_title": "Light range",
 	"st_light_range_desc": "How far the world light reaches.",
 	"st_reset_visuals_title": "Reset Visuals and Flash to defaults",
-	"st_reset_visuals_desc": "Reset only the Visuals and Flash menu."
+	"st_reset_visuals_desc": "Reset only the Visuals and Flash menu.",
+	"st_rescan_skins_title": "Reload skins",
+	"st_rescan_skins_desc": "Scan for new or changed skin files in input/ and the bundled folder, rebuild the lists and re-apply.",
+	"st_rescan_skins_done": "Skins reloaded."
 }
