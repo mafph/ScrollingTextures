@@ -37,18 +37,18 @@ function ST.update()
 	end
 end
 
-local material_config_name = NewRaycastWeaponBase._material_config_name
-function NewRaycastWeaponBase:_material_config_name(...)
-	local name = material_config_name(self, ...)
-	local target = lookup(name)
-	local heist = Global.level_data and Global.level_data.level_id
-	local wanted = ST.enabled and not _G.IS_VR and not self._cosmetics_data
-		and (heist and not self:is_npc() or not heist and ST.menus)
-	if target and wanted and managers.dyn_resource:is_resource_ready(
-		Idstring("material_config"), target.ids, DynamicResourceManager.DYN_RESOURCES_PACKAGE) then
-		return type(name) == "string" and target.name or target.ids
-	end
-	return name
+if _G.NewRaycastWeaponBase then
+	Hooks:PostHook(NewRaycastWeaponBase, "_material_config_name", "ScrollingTextures_swap_name", function(self)
+		local name = Hooks:GetReturn()
+		local target = lookup(name)
+		local heist = Global.level_data and Global.level_data.level_id
+		local wanted = ST.enabled and not _G.IS_VR and not self._cosmetics_data
+			and (heist and not self:is_npc() or not heist and ST.menus)
+		if target and wanted and managers.dyn_resource:is_resource_ready(
+			Idstring("material_config"), target.ids, DynamicResourceManager.DYN_RESOURCES_PACKAGE) then
+			return type(name) == "string" and target.name or target.ids
+		end
+	end)
 end
 
 Hooks:PostHook(NewRaycastWeaponBase, "_update_materials", "ScrollingTextures_swap", function(self)
@@ -82,14 +82,6 @@ Hooks:PostHook(NewRaycastWeaponBase, "_update_materials", "ScrollingTextures_swa
 	ST.swapped[self] = #list > 0 and list or nil
 	if #list > 0 then Hooks:Call("ScrollingTexturesSwapped", self, list) end
 end)
-
-local fire = RaycastWeaponBase.fire
-function RaycastWeaponBase:fire(...)
-	local result = fire(self, ...)
-	local T = _G.ScrollingTexturesSettings
-	if result and T then T:on_shot(self) end
-	return result
-end
 
 Hooks:Add("MenuManagerOnOpenMenu", "ScrollingTextures_menu_refresh", function(menu_manager, menu_name)
 	if menu_name == "menu_main" then ST.update() end
