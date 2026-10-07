@@ -72,7 +72,7 @@ local function animated_material(name, dir, skin)
 		el("diffuse_texture", { { "file", skin.df } }),
 		el("self_illumination_texture", { { "file", skin.il } }),
 		el("variable", { { "name", "uv_speed" }, { "value", number(d[1] * C.SCROLL_SPEED) .. " " .. number(d[2] * C.SCROLL_SPEED) .. " 0" }, { "type", "vector3" } }),
-		el("variable", { { "name", "il_bloom" }, { "value", C.GLOW_BLOOM }, { "type", "float" } }),
+		el("variable", { { "name", "il_bloom" }, { "value", C.GLOW_BLOOM }, { "type", "scalar" } }),
 		el("variable", { { "name", "il_multiplier" }, { "value", C.GLOW_MULTIPLIER }, { "type", "scalar" } }),
 	})
 end

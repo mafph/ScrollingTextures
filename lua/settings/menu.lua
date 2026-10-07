@@ -132,7 +132,7 @@ Hooks:Add("MenuManagerPopulateCustomMenus", "ScrollingTextures_populate", functi
 	add_to(MENU_SKIN, "toggle", "scroll", { value = s.scroll, priority = 97 })
 	add_to(MENU_SKIN, "toggle", "menus", { value = s.menus, priority = 96 })
 	add_to(MENU_SKIN, "slider", "glow", { value = s.glow, min = 0, max = 20, step = 0.5, priority = 95 })
-	add_to(MENU_SKIN, "slider", "bloom", { value = s.bloom, min = 0, max = 10, step = 0.25, priority = 94 })
+	add_to(MENU_SKIN, "slider", "bloom", { value = s.bloom, min = 0, max = 4, step = 0.25, priority = 94 })
 	add_to(MENU_SKIN, "slider", "speed", { value = s.speed, min = 0, max = 0.5, step = 0.01, priority = 93 })
 	MenuHelper:AddButton({ id = "st_reset_skin", title = "st_reset_skin_title", desc = "st_reset_skin_desc", callback = "st_reset_skin", menu_id = MENU_SKIN, priority = 10 })
 

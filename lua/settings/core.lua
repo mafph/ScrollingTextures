@@ -20,8 +20,8 @@ T.defaults = {
 	breath_rate = 10,
 	breath_depth = 0.35,
 	breath_offset = -0.20,
-	glow = 1.5,
-	bloom = 1.0,
+	glow = 1.25,
+	bloom = 0.75,
 	speed = 0.07,
 	menus = true,
 
@@ -134,6 +134,7 @@ function T:load()
 	end
 
 	local s = self.settings
+	if s.bloom > 4 then s.bloom = 4 end
 	if not self.skins[s.primary_skin] then s.primary_skin = 1 end
 	if not self.skins[s.secondary_skin] then s.secondary_skin = 1 end
 	self:sync_scrolling_textures()
