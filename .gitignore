@@ -3,3 +3,8 @@
 /data/generated.json
 /data/map.json
 /docs
+/input/*.texture
+/input/*.dds
+/input/*.png
+/input/*.jpg
+/input/*.jpeg
